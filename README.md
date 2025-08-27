@@ -2,7 +2,7 @@
 
 ## Descrição
 
-Projeto de extração, transformação e carregamento (ETL) de dados da API da Coinbase utilizando Python e a biblioteca `request` coletando dados em tempo real.
+Projeto de extração, transformação e carregamento (ETL) de dados da API da Coinbase utilizando Python e a biblioteca `requests` coletando dados em tempo real.
 
 ## Funcionalidades
 
@@ -23,11 +23,11 @@ Projeto de extração, transformação e carregamento (ETL) de dados da API da C
 1. Clone o repositório
 2. Instale as dependências: `pip install -r requirements.txt`
 3. Execute o processo ETL:
-```bash
-python src/extract.py
-python src/transform.py
-python src/load.py
-```
+   ```bash
+   python src/extract.py
+   python src/transform.py
+   python src/load.py
+   ```
 4. Execute: `python main.py`
 
 ## Estrutura
