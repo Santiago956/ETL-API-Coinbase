@@ -1,13 +1,22 @@
 import time
 import os
 import requests
+import logging
 from datetime import datetime
 from dotenv import load_dotenv
+import logfire
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database import Base, BitcoinPrice
 
+#------ Configuração do Logfire ------
+logfire.configure()
+logging.basicConfig(handlers=[logfire.LogfireLoggingHandler()])
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logfire.instrument_sqlalchemy()
+logfire.instrument_requests()
 
 load_dotenv()
 
@@ -28,9 +37,9 @@ Session = sessionmaker(bind=engine)
 def create_table():
     try:
         Base.metadata.create_all(engine)
-        print("Tabela criada com sucesso!")
+        logger.info("Tabela criada com sucesso!")
     except Exception as e:
-        print(f"Erro ao criar tabela: {e}")
+        logger.info(f"Erro ao criar tabela: {e}")
 
 def extract_data_bitcoin():
     try:
@@ -40,13 +49,13 @@ def extract_data_bitcoin():
         data = response.json()
         return data
     except Exception as e:
-        print(f"Erro na extração: {e}")
+        logger.info(f"Erro na extração: {e}")
         return None
 
 def transform_data_bitcoin(data):
     try:
         if not data or "data" not in data:
-            print("Dados inválidos recebidos da API")
+            logger.info("Dados inválidos recebidos da API")
             return None
             
         valor = float(data["data"]["amount"])
@@ -63,12 +72,12 @@ def transform_data_bitcoin(data):
 
         return transformed_data
     except Exception as e:
-        print(f"Erro na transformação: {e}")
+        logger.info(f"Erro na transformação: {e}")
         return None
 
 def load_postgres_data(transformed_data):
     if not transformed_data:
-        print("Dados inválidos, pulando inserção no banco")
+        logger.info("Dados inválidos, pulando inserção no banco")
         return
         
     try:
@@ -79,17 +88,17 @@ def load_postgres_data(transformed_data):
         session.close()
         
     
-        print(f"[{transformed_data['timestamp']}] Dados salvos no PostgreSQL")
+        logger.info(f"[{transformed_data['timestamp']}] Dados salvos no PostgreSQL")
         
     except Exception as e:
-        print(f"Erro ao salvar no PostgreSQL: {e}")
+        logger.info(f"Erro ao salvar no PostgreSQL: {e}")
         if 'session' in locals():
             session.rollback()
             session.close()
 
 
 if __name__ == "__main__":
-    print("Iniciando pipeline de ETL para Bitcoin... (CTRL-C para interromper)")
+    logger.info("Iniciando pipeline de ETL para Bitcoin... (CTRL-C para interromper)")
     
     # Criar tabela se não existir
     create_table()
@@ -103,19 +112,19 @@ if __name__ == "__main__":
                 if transformed_data:
                     load_postgres_data(transformed_data)
                 else:
-                    print("Falha na transformação dos dados")
+                    logger.info("Falha na transformação dos dados")
             else:
-                print("Falha na extração dos dados")
+                logger.info("Falha na extração dos dados")
             
-            print("Aguardando 15 segundos para próxima execução...")
+            logger.info("Aguardando 15 segundos para próxima execução...")
             time.sleep(15)
             
         except KeyboardInterrupt:
-            print("\nPipeline interrompido pelo usuário")
+            logger.info("\nPipeline interrompido pelo usuário")
             break
         except Exception as e:
-            print(f"Erro inesperado: {e}")
-            print("Aguardando 30 segundos antes de tentar novamente...")
+            logger.info(f"Erro inesperado: {e}")
+            logger.info("Aguardando 30 segundos antes de tentar novamente...")
             time.sleep(30)
 
 
