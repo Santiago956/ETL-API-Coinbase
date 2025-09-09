@@ -43,10 +43,6 @@ ETL-API-Coinbase/
 └── requirements.txt
 ```
 
-## Contribuição
-
-Pull requests são bem-vindos. Para mudanças maiores, abra uma issue primeiro.
-
 ## Licença
 
 MIT
